@@ -1,0 +1,16 @@
+name: SSH Forward Port To Public Server
+on:
+  workflow_dispatch:
+
+jobs:
+  env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set ENV
+        run: |
+          echo "SERVER_IP:${{ secrets.SERVER_IP }}"
+          echo "SERVER_SSH_PORT:${{ secrets.SERVER_SSH_PORT }}"
+          echo "SERVER_SSH_USER:${{ secrets.SERVER_SSH_USER }}"
+          echo "SERVER_SSH_PASSWORD:${{ secrets.SERVER_SSH_PASSWORD }}"
+          echo "REMOTE_PORT:${{ secrets.REMOTE_PORT }}"
+          echo "LOCAL_PORT:${{ secrets.LOCAL_PORT }}"
