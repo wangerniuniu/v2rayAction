@@ -1,6 +1,8 @@
 name: SSH Forward Port To Public Server
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
 
 jobs:
   env:
@@ -149,15 +151,25 @@ jobs:
           sudo systemctl restart caddy
       - name: Prepare SH
         run: |
-          CODE=`curl -o /dev/null --silent --head --write-out '%{http_code}\n' ${{ secrets.SERVER_IP }}:${{ secrets.SERVER_REMOTE_PORT }}`
-          echo "CODE: $CODE"
-          while [[ "123$CODE" -eq "123404" ]]; do
-          CODE=`curl -o /dev/null --silent --head --write-out '%{http_code}\n' ${{ secrets.SERVER_IP }}:${{ secrets.SERVER_REMOTE_PORT }}`
-          echo "CODE: $CODE"
-          sleep 5
-          done
-          echo "ok"
-        shell: bash
+          echo "#!/bin/bash" >> ready.sh
+          echo "echo \"http://$SERVER_IP:$SERVER_PORT\"" >> ready.sh
+          echo "CODE=\`curl -I -m 10 -o /dev/null -s -w '%{http_code}\\n' \"http://$SERVER_IP:$SERVER_PORT\"\`" >> ready.sh
+          echo "echo \"CODE: \$CODE\"" >> ready.sh
+          echo "while [[ \"123\$CODE\" -eq \"123404\" ]]; do" >> ready.sh
+          echo "CODE=\`curl -I -m 10 -o /dev/null -s -w '%{http_code}\\n' \"http://$SERVER_IP:$SERVER_PORT\"\`" >> ready.sh
+          echo "echo \"CODE: \$CODE\"" >> ready.sh
+          echo "sleep 5" >> ready.sh
+          echo "done"  >> ready.sh
+          echo "echo \"ok\"" >> ready.sh
+          chmod +x ./ready.sh
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_PORT: ${{ secrets.SERVER_REMOTE_PORT }}
+      - name: wait
+        run: |
+          cat ./ready.sh
+          bash ./ready.sh
       - name: Connect Server
         run: |
-          sshpass -p ${{ secrets.SERVER_SSH_PASSWORD }} ssh -o "StrictHostKeyChecking no" -NT -p ${{ secrets.SERVER_SSH_PORT }} -R :${{ secrets.SERVER_REMOTE_PORT }}:localhost:${{ secrets.SERVER_REMOTE_PORT }} ${{ secrets.SERVER_SSH_USER }}@${{ secrets.SERVER_IP }}
+          sshpass -p ${{ secrets.SERVER_SSH_PASSWORD }} ssh -o "StrictHostKeyChecking no" -f -NT -p ${{ secrets.SERVER_SSH_PORT }} -R :${{ secrets.SERVER_REMOTE_PORT }}:localhost:${{ secrets.SERVER_REMOTE_PORT }} ${{ secrets.SERVER_SSH_USER }}@${{ secrets.SERVER_IP }}
+          sleep 1860
