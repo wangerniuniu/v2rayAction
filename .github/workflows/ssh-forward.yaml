@@ -148,8 +148,8 @@ jobs:
           sudo cp -a ./index.html /web/index.html
           sudo chown root:root /etc/caddy/Caddyfile
           cat /etc/caddy/Caddyfile
-          # sudo systemctl restart caddy
-          sudo systemctl enable --now caddy
+          sudo systemctl start caddy
+          #sudo systemctl enable --now caddy
       - name: Prepare SH
         run: |
           echo "#!/bin/bash" >> ready.sh
